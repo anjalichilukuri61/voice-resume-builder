@@ -1,0 +1,22 @@
+# Backend
+backend/target/
+backend/.mvn/
+backend/uploads/
+backend/test_groq.py
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+
+# OS
+.DS_Store
+Thumbs.db
