@@ -99,17 +99,19 @@ const VoiceStudio = () => {
         }
       });
 
-      // text response may contain transcribedText (or if not, check the orchestrator response structure)
-      // Wait, VoiceSession returns transcribedText. Text Orchestrator returns {resume, aiFeedback}.
-      // Since this is handleUpload (audio), the backend returns VoiceSession which has transcribedText and aiFeedback.
-      setTranscript(response.data.transcribedText);
+      if (useOrchestrator && response.data.session) {
+        setTranscript(response.data.session.transcribedText);
+      } else {
+        setTranscript(response.data.transcribedText);
+      }
       toast.success("AI successfully extracted your details!");
       
-      if (response.data.aiFeedback) {
-        setAiFeedback(response.data.aiFeedback);
+      const feedback = (useOrchestrator && response.data.session) ? response.data.session.aiFeedback : response.data.aiFeedback;
+      if (feedback) {
+        setAiFeedback(feedback);
         
         // Use Browser Native Text-to-Speech
-        const utterance = new SpeechSynthesisUtterance(response.data.aiFeedback);
+        const utterance = new SpeechSynthesisUtterance(feedback);
         // User requested default voice
         window.speechSynthesis.speak(utterance);
       }

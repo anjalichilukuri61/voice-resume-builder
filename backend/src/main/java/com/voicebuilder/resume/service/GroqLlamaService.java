@@ -46,9 +46,10 @@ public class GroqLlamaService {
                 "1. For lists (educationList, experienceList, projectList), you MUST output the COMPLETE array. Preserve ALL existing items and fields exactly as they are, and apply the new updates or append new items as needed. " +
                 "2. For objects (personalDetails), ONLY output the keys that contain updated information. " +
                 "3. If a section is completely unchanged, DO NOT include it in your output JSON. " +
-                "4. If the user mentions skills or experiences that strongly indicate a specific job category (e.g., 'Software Engineer', 'Marketing', 'Data Scientist'), update the 'category' field. " +
+                "4. You MUST ALWAYS evaluate the overall profile (skills, experiences, etc.) based on the transcript, and ALWAYS output a 'category' field indicating the most appropriate job title (e.g., 'Software Engineer', 'Marketing', 'Data Scientist'). " +
+                "5. When extracting skills, you MUST group them intelligently into appropriate categories (e.g. 'Programming Languages:', 'Frameworks:', 'Databases:', 'Tools:') instead of lumping everything into one single string. " +
                 "{ \"category\": \"\", \"personalDetails\": { \"fullName\": \"\", \"email\": \"\", \"phone\": \"\", \"linkedIn\": \"\", \"githubUrl\": \"\", \"portfolioUrl\": \"\", \"address\": \"\" }, " +
-                "\"skills\": [\"Category Name: Skill 1, Skill 2\"], " +
+                "\"skills\": [\"Programming Languages: C, Python\", \"Frameworks: React, Express\", \"Databases: MongoDB\", \"Tools: Git, GitHub\"], " +
                 "\"certifications\": [\"Name of Certification - Issuing Organization\"], " +
                 "\"educationList\": [ { \"degree\": \"\", \"institution\": \"\", \"location\": \"\", \"startDate\": \"\", \"endDate\": \"\", \"gradeOrCgpa\": \"\", \"description\": \"\" } ], " +
                 "\"projectList\": [ { \"projectName\": \"\", \"role\": \"\", \"startDate\": \"\", \"endDate\": \"\", \"projectUrl\": \"\", \"technologiesUsed\": [], \"description\": [] } ], " +
@@ -114,13 +115,15 @@ public class GroqLlamaService {
             response = webClient.post()
                     .uri(groqApiUrl)
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + groqApiKey)
+                    .header(HttpHeaders.CONNECTION, "close")
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(requestBody)
                     .retrieve()
                     .bodyToMono(JsonNode.class)
+                    .retryWhen(reactor.util.retry.Retry.backoff(3, java.time.Duration.ofSeconds(2)))
                     .block();
-        } catch (org.springframework.web.reactive.function.client.WebClientResponseException e) {
-            throw new RuntimeException("Groq API Error: " + e.getResponseBodyAsString(), e);
+        } catch (Exception e) {
+            throw new RuntimeException("Groq API Error: " + e.getMessage(), e);
         }
 
         if (response != null && response.has("choices")) {
@@ -140,13 +143,15 @@ public class GroqLlamaService {
             response = webClient.post()
                     .uri(groqApiUrl)
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + groqApiKey)
+                    .header(HttpHeaders.CONNECTION, "close")
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(requestBody)
                     .retrieve()
                     .bodyToMono(JsonNode.class)
+                    .retryWhen(reactor.util.retry.Retry.backoff(3, java.time.Duration.ofSeconds(2)))
                     .block();
-        } catch (org.springframework.web.reactive.function.client.WebClientResponseException e) {
-            System.err.println("Groq API Error: " + e.getResponseBodyAsString());
+        } catch (Exception e) {
+            System.err.println("Groq API Error: " + e.getMessage());
             return null;
         }
 

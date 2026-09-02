@@ -46,10 +46,12 @@ public class GroqWhisperService {
         JsonNode response = webClient.post()
                 .uri(groqApiUrl)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + groqApiKey)
+                .header(HttpHeaders.CONNECTION, "close")
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .body(BodyInserters.fromMultipartData(multipartBody))
                 .retrieve()
                 .bodyToMono(JsonNode.class)
+                .retryWhen(reactor.util.retry.Retry.backoff(3, java.time.Duration.ofSeconds(2)))
                 .block(); // .block() makes it synchronous. We will wait for the result.
 
         // 3. Extract and return the transcribed text

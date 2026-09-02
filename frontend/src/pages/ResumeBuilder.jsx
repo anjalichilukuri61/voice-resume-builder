@@ -135,7 +135,14 @@ const ResumeBuilder = () => {
       {/* Header & Optimize Button */}
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">{resumeData?.title || 'Resume Builder'}</h1>
+          <div className="flex items-center space-x-3">
+            <h1 className="text-3xl font-bold text-gray-900">{resumeData?.title || 'Resume Builder'}</h1>
+            {resumeData?.category && resumeData.category !== "General" && (
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-indigo-100 text-indigo-800">
+                {resumeData.category}
+              </span>
+            )}
+          </div>
           <p className="text-gray-500 mt-1">Manually edit your details or let AI optimize them.</p>
         </div>
         
