@@ -29,6 +29,23 @@ const ResumeBuilder = () => {
   const mediaRecorderRef = React.useRef(null);
   const audioChunksRef = React.useRef([]);
 
+  // Processing Status Animation Logic
+  const [processingMessage, setProcessingMessage] = useState("Processing...");
+  
+  useEffect(() => {
+    let timeouts = [];
+    if (isProcessing) {
+      setProcessingMessage("Uploading audio securely...");
+      timeouts.push(setTimeout(() => setProcessingMessage("Transcribing audio to text..."), 1500));
+      timeouts.push(setTimeout(() => setProcessingMessage("AI is analyzing and extracting data..."), 4000));
+      timeouts.push(setTimeout(() => setProcessingMessage("Applying updates to your resume..."), 7000));
+    } else {
+      setProcessingMessage("Processing...");
+    }
+    
+    return () => timeouts.forEach(clearTimeout);
+  }, [isProcessing]);
+
   // If there's an ID in the URL, fetch that resume!
   useEffect(() => {
     if (id) {
@@ -175,8 +192,64 @@ const ResumeBuilder = () => {
         </div>
       </div>
 
+      {/* Section Voice Updater */}
+      {id && (
+        <div className="mb-6 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-6 border border-indigo-100 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="text-center sm:text-left">
+            <h3 className="text-lg font-semibold text-indigo-900 flex items-center justify-center sm:justify-start gap-2">
+              <span className="text-xl">🎙️</span> 
+              Update {steps[currentStep]} using Voice
+            </h3>
+            <p className="text-sm text-indigo-700 mt-1">
+              Too lazy to type? Click the microphone and talk about your {steps[currentStep].toLowerCase()}. The AI will instantly fill out the fields below for you!
+            </p>
+          </div>
+          
+          <div className="flex flex-col items-center shrink-0 relative">
+            {(isRecording || isProcessing) && (
+              <div className="absolute -top-12 bg-white px-4 py-2 rounded-xl shadow-lg border border-indigo-50 text-sm font-bold animate-fade-in-up whitespace-nowrap z-10 transition-all duration-300">
+                {isRecording ? (
+                  <span className="text-red-500 flex items-center gap-2">
+                    <span className="relative flex h-2.5 w-2.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                    </span>
+                    Listening to you...
+                  </span>
+                ) : (
+                  <span className="text-indigo-600 flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    {processingMessage}
+                  </span>
+                )}
+              </div>
+            )}
+            
+            <button
+              onClick={isRecording ? stopRecording : startRecording}
+              disabled={isProcessing}
+              className={`h-14 w-14 rounded-full flex items-center justify-center shadow-lg transition-all transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-opacity-50 ${
+                isRecording 
+                  ? 'bg-red-500 hover:bg-red-600 focus:ring-red-500 shadow-red-200 animate-pulse' 
+                  : isProcessing
+                    ? 'bg-gray-400 cursor-not-allowed shadow-gray-200'
+                    : 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500 shadow-indigo-200'
+              }`}
+            >
+              {isRecording ? (
+                <Square className="w-5 h-5 text-white" fill="currentColor" />
+              ) : isProcessing ? (
+                <Loader2 className="w-6 h-6 text-white animate-spin" />
+              ) : (
+                <Mic className="w-6 h-6 text-white" />
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Form Wizard */}
-      <div className="mt-8">
+      <div className="mt-2">
         {currentStep === 0 && (
           <PersonalDetailsForm 
             resumeData={resumeData} 
@@ -212,47 +285,6 @@ const ResumeBuilder = () => {
           />
         )}
       </div>
-
-      {/* Floating Voice Updater Widget */}
-      {id && (
-        <div className="fixed bottom-8 right-8 flex flex-col items-end z-50">
-          {(isRecording || isProcessing) && (
-            <div className="mb-4 bg-white px-4 py-2 rounded-lg shadow-lg border border-gray-100 text-sm font-medium animate-pulse">
-              {isRecording ? (
-                <span className="text-red-500 flex items-center gap-2">
-                  <span className="h-2 w-2 bg-red-500 rounded-full animate-ping"></span>
-                  Listening... Click square to stop
-                </span>
-              ) : (
-                <span className="text-indigo-600 flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Processing update...
-                </span>
-              )}
-            </div>
-          )}
-          
-          <button
-            onClick={isRecording ? stopRecording : startRecording}
-            disabled={isProcessing}
-            className={`h-16 w-16 rounded-full flex items-center justify-center shadow-2xl transition-all transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-opacity-50 ${
-              isRecording 
-                ? 'bg-red-500 hover:bg-red-600 focus:ring-red-500 shadow-red-200' 
-                : isProcessing
-                  ? 'bg-gray-400 cursor-not-allowed shadow-gray-200'
-                  : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:ring-indigo-500 shadow-indigo-200'
-            }`}
-          >
-            {isRecording ? (
-              <Square className="w-6 h-6 text-white" fill="currentColor" />
-            ) : isProcessing ? (
-              <Loader2 className="w-8 h-8 text-white animate-spin" />
-            ) : (
-              <Mic className="w-8 h-8 text-white" />
-            )}
-          </button>
-        </div>
-      )}
     </div>
   );
 };

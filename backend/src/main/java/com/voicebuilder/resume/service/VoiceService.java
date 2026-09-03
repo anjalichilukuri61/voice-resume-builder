@@ -59,4 +59,18 @@ public class VoiceService {
         session.setUpdatedAt(java.time.LocalDateTime.now());
         return voiceSessionRepository.save(session);
     }
+    
+    public void updateStatus(String sessionId, String status) {
+        voiceSessionRepository.findById(sessionId).ifPresent(session -> {
+            session.setStatus(status);
+            session.setUpdatedAt(java.time.LocalDateTime.now());
+            voiceSessionRepository.save(session);
+        });
+    }
+
+    public String getLatestSessionStatus(String resumeId) {
+        return voiceSessionRepository.findTopByResumeIdOrderByUpdatedAtDesc(resumeId)
+                .map(VoiceSession::getStatus)
+                .orElse("NOT_FOUND");
+    }
 }

@@ -11,6 +11,7 @@ import java.util.Optional;
 public interface VoiceSessionRepository extends MongoRepository<VoiceSession, String> {
     List<VoiceSession> findByUserId(String userId);
     Optional<VoiceSession> findByIdAndUserId(String id, String userId);
+    Optional<VoiceSession> findTopByResumeIdOrderByUpdatedAtDesc(String resumeId);
     
     // Phase 10: Dashboard queries
     long countByUserId(String userId);

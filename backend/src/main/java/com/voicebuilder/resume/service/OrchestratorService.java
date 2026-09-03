@@ -28,6 +28,7 @@ public class OrchestratorService {
         VoiceSession session = voiceService.saveAudioFile(file, userId, resumeId);
         
         // Step 2: Agent 1 (Listener) - Whisper Transcription
+        voiceService.updateStatus(session.getId(), "TRANSCRIBING");
         String transcript = groqWhisperService.transcribeAudio(session.getSavedFilePath());
         session = voiceService.updateTranscript(session.getId(), transcript);
         
@@ -35,11 +36,13 @@ public class OrchestratorService {
         Resume existingResume = resumeService.getResumeById(resumeId, userId).orElse(new Resume());
 
         // Step 3: Agent 2 (Extractor) - LLaMA JSON Extraction (Merging with existing)
+        voiceService.updateStatus(session.getId(), "ANALYZING");
         String extractedJson = groqLlamaService.extractResumeData(transcript, existingResume);
         System.out.println("EXTRACTED JSON FROM LLAMA (Orchestrator): " + extractedJson);
         Resume extractedResume = objectMapper.readValue(extractedJson, Resume.class);
         
         // Step 4: Save Extracted State FIRST (so we don't lose data if optimizer is lazy)
+        voiceService.updateStatus(session.getId(), "UPDATING");
         Resume savedResume = resumeService.updateResume(resumeId, extractedResume, userId);
         
         // Step 5: Agent 3 (Optimizer) - LLaMA ATS Optimization
@@ -59,6 +62,8 @@ public class OrchestratorService {
         java.util.Map<String, Object> result = new java.util.HashMap<>();
         result.put("session", session);
         result.put("resume", savedResume);
+        
+        voiceService.updateStatus(session.getId(), "COMPLETED");
         return result;
     }
 

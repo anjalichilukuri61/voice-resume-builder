@@ -11,6 +11,7 @@ const VoiceStudio = () => {
   
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [currentStep, setCurrentStep] = useState(null);
   const [transcript, setTranscript] = useState(null);
   const [resumeId, setResumeId] = useState(id);
   const [useOrchestrator, setUseOrchestrator] = useState(true);
@@ -18,6 +19,16 @@ const VoiceStudio = () => {
   // MediaRecorder variables
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
+  const pollingIntervalRef = useRef(null);
+
+  const processingSteps = [
+    { id: 'UPLOADED_PENDING_TRANSCRIPTION', label: '🎙️ Voice recording received' },
+    { id: 'TRANSCRIBING', label: '📝 Converting speech to text' },
+    { id: 'TRANSCRIPTION_COMPLETED', label: '✅ Transcription finished' },
+    { id: 'ANALYZING', label: '🧠 Analyzing response and extracting data' },
+    { id: 'UPDATING', label: '💾 Updating profile fields' },
+    { id: 'COMPLETED', label: '✅ Completed' }
+  ];
 
   // If no ID was provided, create a blank draft resume immediately
   const hasCreatedDraft = useRef(false);
@@ -93,6 +104,22 @@ const VoiceStudio = () => {
       // Phase 6: Switch endpoint based on the orchestrator toggle
       const endpoint = useOrchestrator ? `/voice/orchestrate/${resumeId}` : `/voice/upload/${resumeId}`;
       
+      setCurrentStep('UPLOADED_PENDING_TRANSCRIPTION');
+      
+      // Start polling for status
+      if (useOrchestrator) {
+        pollingIntervalRef.current = setInterval(async () => {
+          try {
+            const statusRes = await api.get(`/voice/status/${resumeId}`);
+            if (statusRes.data.status && statusRes.data.status !== 'NOT_FOUND') {
+              setCurrentStep(statusRes.data.status);
+            }
+          } catch (e) {
+            // Ignore polling errors
+          }
+        }, 500);
+      }
+
       const response = await api.post(endpoint, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
@@ -120,6 +147,11 @@ const VoiceStudio = () => {
       toast.error('Failed to process voice data.');
     } finally {
       setIsProcessing(false);
+      setCurrentStep(null);
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
     }
   };
 
@@ -189,14 +221,48 @@ const VoiceStudio = () => {
         </div>
       </div>
 
-      {/* Phase 6: Skeleton Loading Animation */}
+      {/* Phase 6: Skeleton Loading Animation & AI Steps */}
       {isProcessing && (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <h3 className="text-lg font-semibold text-gray-700 flex items-center">
+          <h3 className="text-lg font-semibold text-gray-700 flex items-center mb-4">
             <Loader2 className="h-5 w-5 animate-spin mr-2 text-indigo-600" />
-            AI Orchestrator is running multiple agents...
+            {useOrchestrator ? 'AI Orchestrator is processing...' : 'Processing audio...'}
           </h3>
-          <SkeletonCard />
+          
+          {useOrchestrator ? (
+            <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+              <div className="space-y-4">
+                {processingSteps.map((step, index) => {
+                  const currentStepIndex = processingSteps.findIndex(s => s.id === currentStep);
+                  const isCompleted = index < currentStepIndex || currentStep === 'COMPLETED';
+                  const isCurrent = step.id === currentStep;
+                  
+                  return (
+                    <div key={step.id} className="flex items-center space-x-3">
+                      <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center">
+                        {isCompleted ? (
+                          <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                        ) : isCurrent ? (
+                          <Loader2 className="h-5 w-5 animate-spin text-indigo-600" />
+                        ) : (
+                          <div className="w-2 h-2 rounded-full bg-gray-200"></div>
+                        )}
+                      </div>
+                      <span className={`text-sm font-medium ${
+                        isCompleted ? 'text-gray-900' :
+                        isCurrent ? 'text-indigo-600 font-bold' :
+                        'text-gray-400'
+                      }`}>
+                        {step.label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <SkeletonCard />
+          )}
         </div>
       )}
 

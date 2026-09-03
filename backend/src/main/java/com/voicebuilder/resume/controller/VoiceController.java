@@ -130,4 +130,16 @@ public class VoiceController {
                     .body("Text Orchestration Failed: " + e.getMessage());
         }
     }
+    @GetMapping("/status/{resumeId}")
+    public ResponseEntity<?> getStatus(@PathVariable String resumeId, Authentication authentication) {
+        try {
+            // Verify user is logged in
+            getLoggedInUserId(authentication);
+            String status = voiceService.getLatestSessionStatus(resumeId);
+            return ResponseEntity.ok(java.util.Collections.singletonMap("status", status));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to get status: " + e.getMessage());
+        }
+    }
 }
