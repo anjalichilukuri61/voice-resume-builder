@@ -90,6 +90,17 @@ const Settings = () => {
             <Shield className="h-5 w-5" />
             <span>Security</span>
           </button>
+          <button 
+            onClick={() => setActiveTab('ai-preferences')}
+            className={`w-full flex items-center space-x-3 px-4 py-3 font-medium rounded-xl transition-colors ${
+              activeTab === 'ai-preferences' 
+                ? 'bg-indigo-50 text-indigo-700' 
+                : 'text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            <span className="text-xl">✨</span>
+            <span>AI Provider</span>
+          </button>
         </div>
 
         {/* Main Content */}
@@ -142,6 +153,67 @@ const Settings = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          )}
+
+          {/* AI Preferences Section */}
+          {activeTab === 'ai-preferences' && (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 animate-in fade-in slide-in-from-right-4">
+              <h2 className="text-lg font-bold text-gray-900 mb-4">AI Provider Settings</h2>
+              <p className="text-sm text-gray-500 mb-6">Choose which AI provider powers your resume extraction and optimization.</p>
+              
+              <div className="space-y-4">
+                {['Groq', 'OpenAI', 'Gemini'].map((provider) => (
+                  <div 
+                    key={provider}
+                    onClick={async () => {
+                      if (provider === user?.aiProvider) return;
+                      setIsUpdating(true);
+                      try {
+                        const res = await api.put('/users/preferences/ai-provider', { aiProvider: provider });
+                        toast.success(`${provider} set as default AI!`);
+                        // In real app, update AuthContext here. For now we force reload or rely on context sync
+                        if (res.data) {
+                           window.location.reload(); // simple way to sync context state across app
+                        }
+                      } catch(error) {
+                        toast.error(`Failed to switch to ${provider}`);
+                      } finally {
+                        setIsUpdating(false);
+                      }
+                    }}
+                    className={`relative flex cursor-pointer rounded-xl border p-4 shadow-sm focus:outline-none ${
+                      (user?.aiProvider || 'Groq') === provider 
+                        ? 'border-indigo-600 bg-indigo-50 ring-1 ring-indigo-600'
+                        : 'border-gray-300 bg-white hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex w-full items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="text-sm">
+                          <p className={`font-medium ${
+                            (user?.aiProvider || 'Groq') === provider ? 'text-indigo-900' : 'text-gray-900'
+                          }`}>
+                            {provider} {(user?.aiProvider || 'Groq') === provider && '⭐ Default'}
+                          </p>
+                          <p className={`inline-block ${
+                            (user?.aiProvider || 'Groq') === provider ? 'text-indigo-700' : 'text-gray-500'
+                          }`}>
+                            {provider === 'Groq' && 'Fast, open-source models.'}
+                            {provider === 'OpenAI' && 'Industry standard GPT models.'}
+                            {provider === 'Gemini' && 'Google\'s multimodal models.'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="ml-4 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-gray-300 bg-white">
+                        {(user?.aiProvider || 'Groq') === provider && (
+                          <div className="h-3 w-3 rounded-full bg-indigo-600" />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 

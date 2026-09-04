@@ -12,10 +12,17 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import com.voicebuilder.resume.service.ai.AiTranscriptionProvider;
+
 import java.io.File;
 
 @Service
-public class GroqWhisperService {
+public class GroqWhisperService implements AiTranscriptionProvider {
+
+    @Override
+    public String getProviderName() {
+        return "Groq";
+    }
 
     private final WebClient webClient;
     

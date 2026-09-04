@@ -7,12 +7,19 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import com.voicebuilder.resume.service.ai.AiExtractionProvider;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @Service
-public class GroqLlamaService {
+public class GroqLlamaService implements AiExtractionProvider {
+
+    @Override
+    public String getProviderName() {
+        return "Groq";
+    }
 
     private final WebClient webClient;
 

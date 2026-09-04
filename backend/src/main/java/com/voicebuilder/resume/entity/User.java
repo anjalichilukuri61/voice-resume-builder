@@ -17,6 +17,8 @@ public class User {
     private String email;
     private String password;
     
+    // AI Preference (Groq, OpenAI, Gemini)
+    private String aiProvider = "Groq";
 
     private LocalDateTime createdAt = LocalDateTime.now();
     private LocalDateTime updatedAt = LocalDateTime.now();

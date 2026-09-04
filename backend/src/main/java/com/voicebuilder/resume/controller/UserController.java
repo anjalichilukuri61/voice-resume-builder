@@ -67,4 +67,22 @@ public class UserController {
         
         return ResponseEntity.ok("Password updated successfully");
     }
+
+    @PutMapping("/preferences/ai-provider")
+    public ResponseEntity<?> updateAiProvider(@RequestBody java.util.Map<String, String> body, org.springframework.security.core.Authentication authentication) {
+        String email = authentication.getName();
+        User user = userService.getUserByEmail(email).orElse(null);
+        if (user == null) return ResponseEntity.status(404).body("User not found");
+
+        String aiProvider = body.get("aiProvider");
+        if (aiProvider == null || (!aiProvider.equals("Groq") && !aiProvider.equals("OpenAI") && !aiProvider.equals("Gemini"))) {
+            return ResponseEntity.badRequest().body("Invalid AI Provider");
+        }
+
+        user.setAiProvider(aiProvider);
+        user.setUpdatedAt(java.time.LocalDateTime.now());
+        userService.saveUser(user);
+        
+        return ResponseEntity.ok(user);
+    }
 }

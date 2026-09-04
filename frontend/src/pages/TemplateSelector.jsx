@@ -5,7 +5,7 @@ import api from '../services/api';
 import toast from 'react-hot-toast';
 
 const templates = [
-  { id: 'classic', name: 'Standard Academic', description: 'Traditional Times New Roman layout exactly matching your requested format.', font: 'font-serif' }
+  { id: 'classic', name: 'Classic', description: 'Clean and professional layout.', font: 'font-serif' }
 ];
 
 const TemplateSelector = () => {
